@@ -1,10 +1,10 @@
--- 培根脚本UI
+-- 培根脚本UI - 修正版本
 local success, errorMsg = pcall(function()
     -- 创建主ScreenGui
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "BaconScriptUI"
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
     -- 创建主框架
     local MainFrame = Instance.new("Frame")
@@ -28,8 +28,10 @@ local success, errorMsg = pcall(function()
     Border.Name = "Border"
     Border.Size = UDim2.new(1, 4, 1, 4)
     Border.Position = UDim2.new(0, -2, 0, -2)
-    Border.BackgroundTransparency = 1
+    Border.BackgroundColor3 = Color3.fromRGB(138, 43, 226) -- 初始紫色
+    Border.BackgroundTransparency = 0
     Border.BorderSizePixel = 0
+    Border.ZIndex = 0
     Border.Parent = MainFrame
 
     -- 边框圆角
@@ -37,22 +39,41 @@ local success, errorMsg = pcall(function()
     BorderCorner.CornerRadius = UDim.new(0, 14)
     BorderCorner.Parent = Border
 
-    -- 创建边框渐变
-    local UIGradient = Instance.new("UIGradient")
-    UIGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(138, 43, 226)), -- 紫色
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 150, 255)), -- 蓝色
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(138, 43, 226)) -- 紫色
-    })
-    UIGradient.Rotation = 45
-    UIGradient.Enabled = true
-    UIGradient.Parent = Border
+    -- 边框颜色循环动画
+    local borderColorTweenService = game:GetService("TweenService")
+    local color1 = Color3.fromRGB(138, 43, 226) -- 紫色
+    local color2 = Color3.fromRGB(0, 150, 255) -- 蓝色
+    
+    -- 创建颜色渐变动画
+    local function animateBorder()
+        local tweenToBlue = borderColorTweenService:Create(
+            Border, 
+            TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+            {BackgroundColor3 = color2}
+        )
+        
+        local tweenToPurple = borderColorTweenService:Create(
+            Border,
+            TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+            {BackgroundColor3 = color1}
+        )
+        
+        tweenToBlue:Play()
+        tweenToBlue.Completed:Wait()
+        tweenToPurple:Play()
+        tweenToPurple.Completed:Wait()
+        
+        -- 循环动画
+        while true do
+            tweenToBlue:Play()
+            tweenToBlue.Completed:Wait()
+            tweenToPurple:Play()
+            tweenToPurple.Completed:Wait()
+        end
+    end
 
-    -- 边框动画
-    local borderTweenService = game:GetService("TweenService")
-    local borderTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1)
-    local borderTween = borderTweenService:Create(UIGradient, borderTweenInfo, {Rotation = 405})
-    borderTween:Play()
+    -- 在协程中运行动画
+    coroutine.wrap(animateBorder)()
 
     -- 创建标题
     local Title = Instance.new("TextLabel")
@@ -64,6 +85,7 @@ local success, errorMsg = pcall(function()
     Title.TextColor3 = Color3.fromRGB(200, 220, 255)
     Title.TextSize = 28
     Title.Font = Enum.Font.GothamBold
+    Title.ZIndex = 2
     Title.Parent = MainFrame
 
     -- 创建按钮容器
@@ -72,15 +94,8 @@ local success, errorMsg = pcall(function()
     ButtonContainer.Size = UDim2.new(1, -40, 0, 50)
     ButtonContainer.Position = UDim2.new(0, 20, 1, -70)
     ButtonContainer.BackgroundTransparency = 1
+    ButtonContainer.ZIndex = 2
     ButtonContainer.Parent = MainFrame
-
-    -- 按钮布局
-    local UIListLayout = Instance.new("UIListLayout")
-    UIListLayout.FillDirection = Enum.FillDirection.Horizontal
-    UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    UIListLayout.Padding = UDim.new(0, 20)
-    UIListLayout.Parent = ButtonContainer
 
     -- 创建取消按钮
     local CancelButton = Instance.new("TextButton")
@@ -92,6 +107,7 @@ local success, errorMsg = pcall(function()
     CancelButton.TextSize = 18
     CancelButton.Font = Enum.Font.GothamSemibold
     CancelButton.AutoButtonColor = false
+    CancelButton.ZIndex = 2
     CancelButton.Parent = ButtonContainer
 
     -- 取消按钮圆角
@@ -122,6 +138,7 @@ local success, errorMsg = pcall(function()
     ExecuteButton.TextSize = 18
     ExecuteButton.Font = Enum.Font.GothamSemibold
     ExecuteButton.AutoButtonColor = false
+    ExecuteButton.ZIndex = 2
     ExecuteButton.Parent = ButtonContainer
 
     -- 执行按钮圆角
@@ -161,52 +178,89 @@ local success, errorMsg = pcall(function()
     openTween2:Play()
 
     -- 果冻效果消除UI函数
-    local function jellyDisappear(frame)
+    local function jellyDisappear()
         local tweenService = game:GetService("TweenService")
         
-        -- 果冻缩小效果
-        local shrinkTween1 = tweenService:Create(frame, TweenInfo.new(0.1, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {
-            Size = UDim2.new(0, 380, 0, 220)
+        -- 第一阶段：轻微放大
+        local expandTween = tweenService:Create(MainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 370, 0, 210)
         })
         
-        local shrinkTween2 = tweenService:Create(frame, TweenInfo.new(0.15, Enum.EasingStyle.Elastic, Enum.EasingDirection.In), {
+        -- 第二阶段：快速缩小到很小
+        local shrinkTween = tweenService:Create(MainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out, 0, false, 0), {
             Size = UDim2.new(0, 10, 0, 10),
             BackgroundTransparency = 0.5
         })
         
-        local shrinkTween3 = tweenService:Create(frame, TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        -- 第三阶段：缩小到0并完全透明
+        local disappearTween = tweenService:Create(MainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
             Size = UDim2.new(0, 0, 0, 0),
             BackgroundTransparency = 1
         })
         
-        shrinkTween1:Play()
-        shrinkTween1.Completed:Wait()
-        shrinkTween2:Play()
-        shrinkTween2.Completed:Wait()
-        shrinkTween3:Play()
-        shrinkTween3.Completed:Wait()
+        -- 播放动画序列
+        expandTween:Play()
+        expandTween.Completed:Wait()
+        shrinkTween:Play()
+        shrinkTween.Completed:Wait()
+        disappearTween:Play()
+        disappearTween.Completed:Wait()
         
+        -- 销毁UI
         ScreenGui:Destroy()
     end
 
     -- 取消按钮点击事件
     CancelButton.MouseButton1Click:Connect(function()
-        jellyDisappear(MainFrame)
+        CancelButton.Text = "取消中..."
+        jellyDisappear()
     end)
 
     -- 执行按钮点击事件
     ExecuteButton.MouseButton1Click:Connect(function()
+        ExecuteButton.Text = "执行中..."
+        
         -- 执行脚本
-        local scriptLoad = loadstring(game:HttpGet("https://raw.githubusercontent.com/Baconhead123/reimagined-sniffle/main/培根.lua"))()
-        if scriptLoad then
-            scriptLoad()
+        local success, result = pcall(function()
+            local scriptLoad = loadstring(game:HttpGet("https://raw.githubusercontent.com/Baconhead123/reimagined-sniffle/main/培根.lua", true))()
+            if scriptLoad then
+                scriptLoad()
+            end
+        end)
+        
+        if not success then
+            warn("脚本加载失败: " .. tostring(result))
         end
         
         -- 发送消息
-        game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest"):FireServer("欢迎使用培根脚本，培根脚本NB", "All")
+        local chatService = game:GetService("TextChatService")
+        local replicatedStorage = game:GetService("ReplicatedStorage")
+        
+        -- 尝试新聊天系统
+        if chatService then
+            local channel = chatService.TextChannels.RBXGeneral
+            if channel then
+                channel:SendAsync("欢迎使用培根脚本，培根脚本NB")
+            end
+        end
+        
+        -- 尝试旧聊天系统
+        local success2, result2 = pcall(function()
+            local defaultChatEvents = replicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+            if defaultChatEvents then
+                local sayMessageRequest = defaultChatEvents:FindFirstChild("SayMessageRequest")
+                if sayMessageRequest then
+                    sayMessageRequest:FireServer("欢迎使用培根脚本，培根脚本NB", "All")
+                end
+            end
+        end)
+        
+        if not success2 then
+            warn("发送消息失败: " .. tostring(result2))
+        end
         
         -- 关闭UI
-        jellyDisappear(MainFrame)
+        jellyDisappear()
     end)
 end)
 
