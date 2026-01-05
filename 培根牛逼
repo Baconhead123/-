@@ -1,4 +1,4 @@
--- 培根脚本UI - 修正版本
+-- 培根脚本UI - 完整修正版
 local success, errorMsg = pcall(function()
     -- 创建主ScreenGui
     local ScreenGui = Instance.new("ScreenGui")
@@ -6,14 +6,14 @@ local success, errorMsg = pcall(function()
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-    -- 创建主框架
+    -- 创建主框架（黑色背景）
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, 0, 0, 0) -- 初始大小为0
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     MainFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 35) -- 偏蓝色的黑色
-    MainFrame.BackgroundTransparency = 0.1
+    MainFrame.BackgroundTransparency = 0  -- 完全不透明
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = ScreenGui
@@ -23,20 +23,30 @@ local success, errorMsg = pcall(function()
     UICorner.CornerRadius = UDim.new(0, 12)
     UICorner.Parent = MainFrame
 
-    -- 创建动态边框
+    -- 创建外部边框框架
+    local BorderFrame = Instance.new("Frame")
+    BorderFrame.Name = "BorderFrame"
+    BorderFrame.Size = UDim2.new(1, 8, 1, 8)  -- 比主框架大
+    BorderFrame.Position = UDim2.new(0, -4, 0, -4)
+    BorderFrame.BackgroundTransparency = 1  -- 边框框架透明
+    BorderFrame.BorderSizePixel = 0
+    BorderFrame.ZIndex = -1  -- 确保在主框架后面
+    BorderFrame.Parent = ScreenGui
+
+    -- 创建边框
     local Border = Instance.new("Frame")
     Border.Name = "Border"
-    Border.Size = UDim2.new(1, 4, 1, 4)
-    Border.Position = UDim2.new(0, -2, 0, -2)
+    Border.Size = UDim2.new(1, 0, 1, 0)
+    Border.Position = UDim2.new(0, 0, 0, 0)
     Border.BackgroundColor3 = Color3.fromRGB(138, 43, 226) -- 初始紫色
     Border.BackgroundTransparency = 0
     Border.BorderSizePixel = 0
-    Border.ZIndex = 0
-    Border.Parent = MainFrame
+    Border.ZIndex = -1
+    Border.Parent = BorderFrame
 
     -- 边框圆角
     local BorderCorner = Instance.new("UICorner")
-    BorderCorner.CornerRadius = UDim.new(0, 14)
+    BorderCorner.CornerRadius = UDim.new(0, 16)  -- 比主框架圆角大一点
     BorderCorner.Parent = Border
 
     -- 边框颜色循环动画
@@ -46,29 +56,23 @@ local success, errorMsg = pcall(function()
     
     -- 创建颜色渐变动画
     local function animateBorder()
-        local tweenToBlue = borderColorTweenService:Create(
-            Border, 
-            TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-            {BackgroundColor3 = color2}
-        )
-        
-        local tweenToPurple = borderColorTweenService:Create(
-            Border,
-            TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-            {BackgroundColor3 = color1}
-        )
-        
-        tweenToBlue:Play()
-        tweenToBlue.Completed:Wait()
-        tweenToPurple:Play()
-        tweenToPurple.Completed:Wait()
-        
-        -- 循环动画
         while true do
+            local tweenToBlue = borderColorTweenService:Create(
+                Border, 
+                TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                {BackgroundColor3 = color2}
+            )
+            
+            local tweenToPurple = borderColorTweenService:Create(
+                Border,
+                TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                {BackgroundColor3 = color1}
+            )
+            
             tweenToBlue:Play()
-            tweenToBlue.Completed:Wait()
+            wait(2)
             tweenToPurple:Play()
-            tweenToPurple.Completed:Wait()
+            wait(2)
         end
     end
 
@@ -85,7 +89,6 @@ local success, errorMsg = pcall(function()
     Title.TextColor3 = Color3.fromRGB(200, 220, 255)
     Title.TextSize = 28
     Title.Font = Enum.Font.GothamBold
-    Title.ZIndex = 2
     Title.Parent = MainFrame
 
     -- 创建按钮容器
@@ -94,20 +97,19 @@ local success, errorMsg = pcall(function()
     ButtonContainer.Size = UDim2.new(1, -40, 0, 50)
     ButtonContainer.Position = UDim2.new(0, 20, 1, -70)
     ButtonContainer.BackgroundTransparency = 1
-    ButtonContainer.ZIndex = 2
     ButtonContainer.Parent = MainFrame
 
-    -- 创建取消按钮
+    -- 创建取消按钮（放在左边）
     local CancelButton = Instance.new("TextButton")
     CancelButton.Name = "CancelButton"
     CancelButton.Size = UDim2.new(0, 120, 0, 40)
+    CancelButton.Position = UDim2.new(0, 0, 0, 0)  -- 左边
     CancelButton.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
     CancelButton.Text = "取消"
     CancelButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     CancelButton.TextSize = 18
     CancelButton.Font = Enum.Font.GothamSemibold
     CancelButton.AutoButtonColor = false
-    CancelButton.ZIndex = 2
     CancelButton.Parent = ButtonContainer
 
     -- 取消按钮圆角
@@ -115,49 +117,23 @@ local success, errorMsg = pcall(function()
     CancelButtonCorner.CornerRadius = UDim.new(0, 8)
     CancelButtonCorner.Parent = CancelButton
 
-    -- 取消按钮鼠标效果
-    CancelButton.MouseEnter:Connect(function()
-        game:GetService("TweenService"):Create(CancelButton, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(40, 45, 55)
-        }):Play()
-    end)
-
-    CancelButton.MouseLeave:Connect(function()
-        game:GetService("TweenService"):Create(CancelButton, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(30, 35, 45)
-        }):Play()
-    end)
-
-    -- 创建执行按钮
+    -- 创建执行按钮（放在右边）
     local ExecuteButton = Instance.new("TextButton")
     ExecuteButton.Name = "ExecuteButton"
     ExecuteButton.Size = UDim2.new(0, 120, 0, 40)
+    ExecuteButton.Position = UDim2.new(1, -120, 0, 0)  -- 右边
     ExecuteButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
     ExecuteButton.Text = "执行"
     ExecuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     ExecuteButton.TextSize = 18
     ExecuteButton.Font = Enum.Font.GothamSemibold
     ExecuteButton.AutoButtonColor = false
-    ExecuteButton.ZIndex = 2
     ExecuteButton.Parent = ButtonContainer
 
     -- 执行按钮圆角
     local ExecuteButtonCorner = Instance.new("UICorner")
     ExecuteButtonCorner.CornerRadius = UDim.new(0, 8)
     ExecuteButtonCorner.Parent = ExecuteButton
-
-    -- 执行按钮鼠标效果
-    ExecuteButton.MouseEnter:Connect(function()
-        game:GetService("TweenService"):Create(ExecuteButton, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(0, 140, 255)
-        }):Play()
-    end)
-
-    ExecuteButton.MouseLeave:Connect(function()
-        game:GetService("TweenService"):Create(ExecuteButton, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-        }):Play()
-    end)
 
     -- UI启动动画
     local tweenService = game:GetService("TweenService")
@@ -167,28 +143,75 @@ local success, errorMsg = pcall(function()
         Size = UDim2.new(0, 350, 0, 30)
     })
     
+    -- 边框框架也同步动画
+    local borderTween1 = tweenService:Create(BorderFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 358, 0, 38)
+    })
+    
     -- 第二阶段：继续变大到最终大小
     local openTween2 = tweenService:Create(MainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
         Size = UDim2.new(0, 350, 0, 200)
     })
+    
+    local borderTween2 = tweenService:Create(BorderFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 358, 0, 208)
+    })
 
     -- 播放启动动画
     openTween1:Play()
+    borderTween1:Play()
     openTween1.Completed:Wait()
     openTween2:Play()
+    borderTween2:Play()
+
+    -- 取消按钮鼠标效果
+    CancelButton.MouseEnter:Connect(function()
+        tweenService:Create(CancelButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(40, 45, 55)
+        }):Play()
+    end)
+
+    CancelButton.MouseLeave:Connect(function()
+        tweenService:Create(CancelButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(30, 35, 45)
+        }):Play()
+    end)
+
+    -- 执行按钮鼠标效果
+    ExecuteButton.MouseEnter:Connect(function()
+        tweenService:Create(ExecuteButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(0, 140, 255)
+        }):Play()
+    end)
+
+    ExecuteButton.MouseLeave:Connect(function()
+        tweenService:Create(ExecuteButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        }):Play()
+    end)
 
     -- 果冻效果消除UI函数
     local function jellyDisappear()
-        local tweenService = game:GetService("TweenService")
+        CancelButton.Text = "取消中..."
+        ExecuteButton.Text = "执行中..."
         
         -- 第一阶段：轻微放大
-        local expandTween = tweenService:Create(MainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        local expandTween1 = tweenService:Create(MainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
             Size = UDim2.new(0, 370, 0, 210)
         })
         
+        local borderExpand1 = tweenService:Create(BorderFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 378, 0, 218)
+        })
+        
         -- 第二阶段：快速缩小到很小
-        local shrinkTween = tweenService:Create(MainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out, 0, false, 0), {
-            Size = UDim2.new(0, 10, 0, 10),
+        local shrinkTween = tweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out, 0, false, 0), {
+            Size = UDim2.new(0, 20, 0, 20),
+            BackgroundTransparency = 0.5
+        })
+        
+        local borderShrink = tweenService:Create(BorderFrame, TweenInfo.new(0.25, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out, 0, false, 0), {
+            Size = UDim2.new(0, 28, 0, 28),
             BackgroundTransparency = 0.5
         })
         
@@ -198,12 +221,22 @@ local success, errorMsg = pcall(function()
             BackgroundTransparency = 1
         })
         
+        local borderDisappear = tweenService:Create(BorderFrame, TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1
+        })
+        
         -- 播放动画序列
-        expandTween:Play()
-        expandTween.Completed:Wait()
+        expandTween1:Play()
+        borderExpand1:Play()
+        expandTween1.Completed:Wait()
+        
         shrinkTween:Play()
+        borderShrink:Play()
         shrinkTween.Completed:Wait()
+        
         disappearTween:Play()
+        borderDisappear:Play()
         disappearTween.Completed:Wait()
         
         -- 销毁UI
@@ -212,14 +245,11 @@ local success, errorMsg = pcall(function()
 
     -- 取消按钮点击事件
     CancelButton.MouseButton1Click:Connect(function()
-        CancelButton.Text = "取消中..."
         jellyDisappear()
     end)
 
     -- 执行按钮点击事件
     ExecuteButton.MouseButton1Click:Connect(function()
-        ExecuteButton.Text = "执行中..."
-        
         -- 执行脚本
         local success, result = pcall(function()
             local scriptLoad = loadstring(game:HttpGet("https://raw.githubusercontent.com/Baconhead123/reimagined-sniffle/main/培根.lua", true))()
@@ -233,25 +263,22 @@ local success, errorMsg = pcall(function()
         end
         
         -- 发送消息
-        local chatService = game:GetService("TextChatService")
         local replicatedStorage = game:GetService("ReplicatedStorage")
         
-        -- 尝试新聊天系统
-        if chatService then
-            local channel = chatService.TextChannels.RBXGeneral
-            if channel then
-                channel:SendAsync("欢迎使用培根脚本，培根脚本NB")
-            end
-        end
-        
-        -- 尝试旧聊天系统
+        -- 尝试发送聊天消息
         local success2, result2 = pcall(function()
             local defaultChatEvents = replicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
             if defaultChatEvents then
                 local sayMessageRequest = defaultChatEvents:FindFirstChild("SayMessageRequest")
                 if sayMessageRequest then
                     sayMessageRequest:FireServer("欢迎使用培根脚本，培根脚本NB", "All")
+                else
+                    -- 如果没有找到SayMessageRequest，尝试其他方法
+                    game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("欢迎使用培根脚本，培根脚本NB")
                 end
+            else
+                -- 尝试使用TextChatService
+                game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("欢迎使用培根脚本，培根脚本NB")
             end
         end)
         
