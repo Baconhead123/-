@@ -1,4 +1,4 @@
--- 培根脚本UI - 完整修正版
+-- 培根脚本UI - 优化版
 local success, errorMsg = pcall(function()
     -- 创建主ScreenGui
     local ScreenGui = Instance.new("ScreenGui")
@@ -90,6 +90,19 @@ local success, errorMsg = pcall(function()
     Title.TextSize = 28
     Title.Font = Enum.Font.GothamBold
     Title.Parent = MainFrame
+
+    -- 创建提示文字（在标题下方）
+    local TipLabel = Instance.new("TextLabel")
+    TipLabel.Name = "TipLabel"
+    TipLabel.Size = UDim2.new(1, -20, 0, 30)
+    TipLabel.Position = UDim2.new(0, 10, 0, 50)
+    TipLabel.BackgroundTransparency = 1
+    TipLabel.Text = "脚本加载慢不要以为是空壳"
+    TipLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 白色
+    TipLabel.TextSize = 16
+    TipLabel.Font = Enum.Font.Gotham
+    TipLabel.TextWrapped = true
+    TipLabel.Parent = MainFrame
 
     -- 创建按钮容器
     local ButtonContainer = Instance.new("Frame")
@@ -192,9 +205,6 @@ local success, errorMsg = pcall(function()
 
     -- 果冻效果消除UI函数
     local function jellyDisappear()
-        CancelButton.Text = "取消中..."
-        ExecuteButton.Text = "执行中..."
-        
         -- 第一阶段：轻微放大
         local expandTween1 = tweenService:Create(MainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
             Size = UDim2.new(0, 370, 0, 210)
@@ -245,49 +255,108 @@ local success, errorMsg = pcall(function()
 
     -- 取消按钮点击事件
     CancelButton.MouseButton1Click:Connect(function()
+        CancelButton.Text = "取消中..."
         jellyDisappear()
     end)
 
-    -- 执行按钮点击事件
+    -- 执行按钮点击事件 - 立即播放果冻效果
     ExecuteButton.MouseButton1Click:Connect(function()
-        -- 执行脚本
-        local success, result = pcall(function()
-            local scriptLoad = loadstring(game:HttpGet("https://raw.githubusercontent.com/Baconhead123/reimagined-sniffle/main/培根.lua", true))()
-            if scriptLoad then
-                scriptLoad()
-            end
-        end)
+        ExecuteButton.Text = "执行中..."
         
-        if not success then
-            warn("脚本加载失败: " .. tostring(result))
+        -- 立即开始播放果冻效果
+        local function startJellyEffect()
+            -- 第一阶段：轻微放大
+            local expandTween1 = tweenService:Create(MainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 370, 0, 210)
+            })
+            
+            local borderExpand1 = tweenService:Create(BorderFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 378, 0, 218)
+            })
+            
+            -- 第二阶段：快速缩小到很小
+            local shrinkTween = tweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out, 0, false, 0), {
+                Size = UDim2.new(0, 20, 0, 20),
+                BackgroundTransparency = 0.5
+            })
+            
+            local borderShrink = tweenService:Create(BorderFrame, TweenInfo.new(0.25, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out, 0, false, 0), {
+                Size = UDim2.new(0, 28, 0, 28),
+                BackgroundTransparency = 0.5
+            })
+            
+            -- 第三阶段：缩小到0并完全透明
+            local disappearTween = tweenService:Create(MainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                Size = UDim2.new(0, 0, 0, 0),
+                BackgroundTransparency = 1
+            })
+            
+            local borderDisappear = tweenService:Create(BorderFrame, TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                Size = UDim2.new(0, 0, 0, 0),
+                BackgroundTransparency = 1
+            })
+            
+            -- 播放动画序列
+            expandTween1:Play()
+            borderExpand1:Play()
+            expandTween1.Completed:Wait()
+            
+            shrinkTween:Play()
+            borderShrink:Play()
+            shrinkTween.Completed:Wait()
+            
+            disappearTween:Play()
+            borderDisappear:Play()
+            disappearTween.Completed:Wait()
+            
+            -- 销毁UI
+            ScreenGui:Destroy()
         end
         
-        -- 发送消息
-        local replicatedStorage = game:GetService("ReplicatedStorage")
+        -- 在新线程中启动果冻效果
+        coroutine.wrap(startJellyEffect)()
         
-        -- 尝试发送聊天消息
-        local success2, result2 = pcall(function()
-            local defaultChatEvents = replicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-            if defaultChatEvents then
-                local sayMessageRequest = defaultChatEvents:FindFirstChild("SayMessageRequest")
-                if sayMessageRequest then
-                    sayMessageRequest:FireServer("欢迎使用培根脚本，培根脚本NB", "All")
+        -- 在后台加载脚本（不影响果冻效果）
+        coroutine.wrap(function()
+            -- 等待一小段时间，让果冻效果开始
+            wait(0.05)
+            
+            -- 执行脚本
+            local success, result = pcall(function()
+                local scriptLoad = loadstring(game:HttpGet("https://raw.githubusercontent.com/Baconhead123/reimagined-sniffle/main/培根.lua", true))()
+                if scriptLoad then
+                    scriptLoad()
+                end
+            end)
+            
+            if not success then
+                warn("脚本加载失败: " .. tostring(result))
+            end
+            
+            -- 发送消息
+            local replicatedStorage = game:GetService("ReplicatedStorage")
+            
+            -- 尝试发送聊天消息
+            local success2, result2 = pcall(function()
+                local defaultChatEvents = replicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+                if defaultChatEvents then
+                    local sayMessageRequest = defaultChatEvents:FindFirstChild("SayMessageRequest")
+                    if sayMessageRequest then
+                        sayMessageRequest:FireServer("欢迎使用培根脚本，培根脚本NB", "All")
+                    else
+                        -- 如果没有找到SayMessageRequest，尝试其他方法
+                        game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("欢迎使用培根脚本，培根脚本NB")
+                    end
                 else
-                    -- 如果没有找到SayMessageRequest，尝试其他方法
+                    -- 尝试使用TextChatService
                     game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("欢迎使用培根脚本，培根脚本NB")
                 end
-            else
-                -- 尝试使用TextChatService
-                game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("欢迎使用培根脚本，培根脚本NB")
+            end)
+            
+            if not success2 then
+                warn("发送消息失败: " .. tostring(result2))
             end
-        end)
-        
-        if not success2 then
-            warn("发送消息失败: " .. tostring(result2))
-        end
-        
-        -- 关闭UI
-        jellyDisappear()
+        end)()
     end)
 end)
 
